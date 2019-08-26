@@ -1,6 +1,10 @@
 const Koa = require('koa');
 const Router = require("koa-router");
 const KoaBody = require("koa-body");
+const fs = require("fs");
+const Util = require("./myutil");
+const path = require("path");
+
 
 let app = new Koa();
 let router = new Router();
@@ -32,14 +36,15 @@ app.use(async (ctx, next) => {
 let buffs = [];
 let i = 0;
 router.post("/upload", async (ctx, next) => {
-    console.log(++i);
+    let uploadDir = Util.mkUploadDir();
+    
     let chunk = ctx.request.files.file;
     let buff = fs.readFileSync(chunk.path);
     buffs.push(buff);
     let end = ctx.request.body.end;
     if (end) {
         let b = Buffer.concat(buffs);
-        fs.writeFileSync(ctx.request.body.name, b);
+        fs.writeFileSync(path.join(uploadDir, ctx.request.body.name), b);
     }
     ctx.body = {
         code: 0,
