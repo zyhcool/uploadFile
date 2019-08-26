@@ -28,19 +28,8 @@ app.use(async (ctx, next) => {
     await next();
 })
 
-// 全局储存上传的文件分片
-let buffs = [];
-let i = 0;
 router.post("/upload", async (ctx, next) => {
-    console.log(++i);
-    let chunk = ctx.request.files.file;
-    let buff = fs.readFileSync(chunk.path);
-    buffs.push(buff);
-    let end = ctx.request.body.end;
-    if (end) {
-        let b = Buffer.concat(buffs);
-        fs.writeFileSync(ctx.request.body.name, b);
-    }
+    // ...
     ctx.body = {
         code: 0,
     }
