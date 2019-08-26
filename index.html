@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <input type="file" />
+    <button id="upload">upload</button>
+    <button id="stop">stop</button>
+    <button id="goon">goon</button>
+    <script>
+        let i = 0;
+        let file;
+        let pause = false;
+        const chunkLength = 10 * 1024;
+        let start = 0;
+        let end = start + chunkLength;
+        let chunkNum;
+
+        let fileInput = document.querySelector("input");
+        fileInput.addEventListener("change", (e) => {
+            file = e.target.files[0];
+            console.log(file.size);
+            chunkNum = Math.ceil(file.size / chunkLength);
+        });
+
+        let createFormdata = (file) => {
+            let formdata = new FormData();
+            formdata.append("name", file.name);
+            if (end + chunkLength > file.size) {
+                end = file.size;
+                formdata.append("end", true);
+                stop();
+            }
+            formdata.append("file", file.slice(start, end));
+            return formdata;
+        }
+
+        function upload(file) {
+            if (pause) {
+                return;
+            }
+            console.log(++i, pause);
+            let xhr = new XMLHttpRequest();
+            xhr.open("post", "http://localhost:4000/upload");
+            let formdata = createFormdata(file);
+            xhr.send(formdata);
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200 && pause === false) {
+                    start += chunkLength;
+                    end += chunkLength;
+                    upload(file);
+                }
+            }
+        }
+        document.querySelector("#upload").addEventListener("click", () => {
+            upload(file)
+        });
+        document.querySelector("#stop").addEventListener("click", stop);
+        document.querySelector("#goon").addEventListener("click", goon);
+        function stop() {
+            console.log("stop: ",i);
+            pause = true;
+        }
+        function goon() {
+            console.log("goon: ",i)
+            pause = false;
+            upload(file)
+        }
+
+    </script>
+</body>
+
+</html>
