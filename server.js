@@ -32,22 +32,34 @@ app.use(async (ctx, next) => {
     await next();
 })
 
-// 全局储存上传的文件分片
-let buffs = [];
-let i = 0;
+
 router.post("/upload", async (ctx, next) => {
-    let uploadDir = Util.mkUploadDir();
-    
-    let chunk = ctx.request.files.file;
-    let buff = fs.readFileSync(chunk.path);
-    buffs.push(buff);
-    let end = ctx.request.body.end;
+    const chunk = ctx.request.files.file;
+    const { hash, end, name, index } = ctx.request.body;
+    let filename;
+
+    const uploadDir = Util.mkUploadDir();
+    const chunkDir = Util.mkUploadTemp(hash);
+
+    const chunkPath = path.join(chunkDir, hash + '-' + index);
+    fs.copyFileSync(chunk.path, chunkPath);
+    fs.unlinkSync(chunk.path);
+
     if (end) {
-        let b = Buffer.concat(buffs);
-        fs.writeFileSync(path.join(uploadDir, ctx.request.body.name), b);
+        filename = `${new Date().getTime()}${name}`;
+        const filePath = path.join(uploadDir, filename);
+        for (let i = 0; i < index + 1; i++) {
+            const chunkPath = path.join(chunkDir, hash + "-" + i);
+            if (fs.existsSync(chunkPath)) {
+                fs.appendFileSync(filePath, fs.readFileSync(chunkPath));
+                fs.unlinkSync(chunkPath);
+            }
+        }
+        fs.rmdirSync(chunkDir);
     }
     ctx.body = {
         code: 0,
+        filename,
     }
     await next();
 })

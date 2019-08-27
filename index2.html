@@ -14,22 +14,20 @@
     <button id="stop">stop</button>
     <button id="goon">goon</button>
     <script>
-        let i;
+        let i = 0;
         let file;
         let pause = false;
-        const chunkLength = 2 * 1024 * 1024;
-        let start;
-        let end;
-        let hash;
+        const chunkLength = 20 * 1024;
+        let start = 0;
+        let end = start + chunkLength;
+        let chunkNum;
+        let hash = `${Math.random().toString()}${new Date().getTime()}`
 
         let fileInput = document.querySelector("input");
         fileInput.addEventListener("change", (e) => {
             file = e.target.files[0];
-            i = 0;
-            start = 0;
-            end = start + chunkLength;
-            hash = `${Math.random().toString()}${new Date().getTime()}`;
             console.log(file.size);
+            chunkNum = Math.ceil(file.size / chunkLength);
         });
 
         let createFormdata = (file) => {
@@ -47,7 +45,6 @@
 
         function upload(file) {
             if (pause) {
-                pause = false;
                 return;
             }
             let xhr = new XMLHttpRequest();
